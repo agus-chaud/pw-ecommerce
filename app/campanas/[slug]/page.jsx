@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ContributionForm } from "@/components/campaign/ContributionForm";
 import { ContributionsList } from "@/components/campaign/ContributionsList";
 import { FundingProgress } from "@/components/campaign/FundingProgress";
 import { campaigns, getCampaignBySlug } from "@/lib/data/campaigns";
@@ -60,6 +61,8 @@ export default function CampanaDetallePage({ params }) {
           <FundingProgress campaign={campaign} />
         </aside>
       </div>
+
+      <ContributionForm campaignTitle={campaign.title} />
 
       <ContributionsList contributions={campaign.contributions} />
     </article>

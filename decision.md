@@ -160,3 +160,35 @@ Las decisiones se irán ampliando en fases posteriores (por ejemplo, convencione
 | **Alternativas** | Mantener TS: incumple la consigna. Usar `.js` sin JSX: posible pero verboso con React. |
 | **Impacto** | `npm run build` ya no ejecuta el checker de tipos de TypeScript; hay que confiar en ESLint, tests y revisiones. |
 | **Aprendido** | Los metadatos de Next (`export const metadata`) y los Server Components siguen igual en `.jsx`; solo se quitan anotaciones de tipo e imports `import type`. |
+
+---
+
+## Fase 3 — E3 (formularios dinámicos, primera parte)
+
+### D14. Formulario de aporte con DOM vivo y reglas de privacidad compartidas
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Componente cliente `components/campaign/ContributionForm.jsx` en la página `app/campanas/[slug]/page.jsx`, con resumen en vivo (`aria-live`), vista previa de fila pública, validación (monto mínimo $100 ARS, nombre obligatorio si “Mostrar mi nombre públicamente”), y envío simulado con mensaje de estado. |
+| **Por qué** | Cumple el plan E3: el DOM cambia con la interacción (no solo HTML estático). La vista previa reutiliza `getContributorDisplayName` y `getContributionAmountDisplay` para alinearse con `ContributionsList`. |
+| **Alternativas** | Solo HTML5 sin feedback dinámico: no alcanza “Excelente” en E3. Duplicar reglas de privacidad en el componente: riesgo de divergencia con la lista. |
+| **Impacto** | Nueva función `deriveInitialsFallback` en `lib/data/campaigns.js` (iniciales para nombre oculto); estilos en `app/globals.css` bajo `.contribution-form`. |
+| **Aprendido** | El botón indica “simulación” hasta conectar pago/API en fases posteriores; el contrato de UX queda listo. |
+
+### D15. Validación tipo “smart-testing” (comportamiento + CI)
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Tests con React Testing Library centrados en **comportamiento observable** (etiquetas, roles, texto en vista previa), no en detalles de implementación interna del componente. Archivo `components/campaign/ContributionForm.test.jsx` cubre: título y campaña, actualización de preview con monto/nombre, cambio a iniciales al desmarcar nombre público, y mensaje de error al enviar con monto inválido. |
+| **Por qué** | La skill referenciada como `smart-testing` en `~/.agents/skills/agents.md` prioriza pruebas por comportamiento real y evita sobre-mocking; en este entorno el archivo `smart-testing/SKILL.md` no estaba presente, así que se aplicó ese criterio explícitamente. |
+| **Alternativas** | Solo tests de funciones en `campaigns.test.js`: no protegen la integración UI. E2E (Playwright): útil más adelante; para E3 la pirámide sugiere unit + smoke de componente en CI. |
+| **Impacto** | Suite Jest: `lib/data/campaigns.test.js`, `app/page.test.jsx`, `components/campaign/ContributionForm.test.jsx` (13 tests en total al documentar). |
+| **Aprendido** | Verificación completa alineada al workflow de Fase 1: `npm run test` → `npm run lint` → `npm run build` (todos OK tras estos cambios). |
+
+### Verificación registrada (pipeline local)
+
+| Comando | Resultado |
+|---------|-----------|
+| `npm run test` | OK (13 tests) |
+| `npm run lint` | Sin advertencias ni errores |
+| `npm run build` | Compilación y páginas estáticas OK |
