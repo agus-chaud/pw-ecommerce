@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#f6f0e8"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#sky)"/>
+  <circle cx="400" cy="220" r="120" fill="none" stroke="#c45c3e" stroke-width="4" opacity="0.5"/>
+  <circle cx="400" cy="220" r="80" fill="none" stroke="#c45c3e" stroke-width="3" opacity="0.65"/>
+  <circle cx="400" cy="220" r="40" fill="none" stroke="#c45c3e" stroke-width="2" opacity="0.8"/>
+  <rect x="330" y="300" width="140" height="90" rx="10" fill="#1c1917"/>
+  <circle cx="400" cy="335" r="28" fill="#fffcf7"/>
+  <text x="400" y="455" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#1c1917">Radio  mock visual</text>
+</svg>

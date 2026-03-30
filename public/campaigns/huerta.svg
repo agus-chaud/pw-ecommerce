@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" role="img" aria-hidden="true">
+  <rect width="800" height="500" fill="#e8f5e9"/>
+  <path d="M0 380 Q200 300 400 360 T800 340 L800 500 L0 500 Z" fill="#7cb342" opacity="0.35"/>
+  <ellipse cx="280" cy="260" rx="90" ry="120" fill="#43a047" opacity="0.85"/>
+  <ellipse cx="420" cy="240" rx="100" ry="130" fill="#2e7d32" opacity="0.9"/>
+  <ellipse cx="540" cy="270" rx="85" ry="115" fill="#66bb6a" opacity="0.8"/>
+  <rect x="360" y="320" width="80" height="90" rx="6" fill="#795548"/>
+  <text x="400" y="470" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#33691e">Huerta  mock visual</text>
+</svg>
