@@ -10,9 +10,8 @@ export function CampaignCard({ campaign }) {
       <Link href={`/campanas/${campaign.slug}`} className="campaign-card__image-link">
         <Image
           src={campaign.imageSrc}
-          alt=""
-          width={800}
-          height={500}
+          alt={campaign.imageAlt}
+          fill
           className="campaign-card__image"
           sizes="(max-width: 768px) 100vw, 33vw"
           priority={campaign.featured}

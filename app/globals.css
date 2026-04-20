@@ -571,9 +571,8 @@ main:focus-visible {
 }
 
 .campaign-card__image {
-  width: 100%;
-  height: auto;
   object-fit: cover;
+  object-position: center;
 }
 
 .campaign-card__body {

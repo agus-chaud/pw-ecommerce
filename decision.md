@@ -216,3 +216,13 @@ Las decisiones se irán ampliando en fases posteriores (por ejemplo, convencione
 | **Alternativas** | Implementar directo sin planning: más rápido pero con mayor riesgo de rehacer trabajo por malentendidos. SDD completo (explore → propose → spec → design → tasks): más peso para cambios de landing; grill-me es el punto medio apropiado. |
 | **Impacto** | Cada cambio significativo de producto parte de 4 preguntas contextuales + un plan aprobado. El plan se guarda localmente y se persiste en engram para recuperación entre sesiones. |
 | **Aprendido** | El primer grill-me reveló que el usuario pedía "migrar a Next.js" pero ya estaba en Next.js — la exploración automática del codebase antes de la primera pregunta es crítica para no hacer preguntas irrelevantes. |
+
+### D18. Fix renderizado de imágenes en CampaignCard: prop `fill` en next/image
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Reemplazar `width={800} height={500}` por el prop `fill` en el componente `<Image>` dentro de `CampaignCard`. Actualizar CSS de `.campaign-card__image` para eliminar `width: 100%; height: auto;` y dejar solo `object-fit: cover; object-position: center`. Corregir `alt=""` por `alt={campaign.imageAlt}`. |
+| **Por qué** | Con dimensiones explícitas, `next/image` renderiza la imagen a su ratio intrínseco y el CSS `object-fit: cover` no tiene efecto (no hay altura restringida por el contenedor). El prop `fill` genera `position: absolute; inset: 0` y hace que la imagen llene el contenedor `position: relative; aspect-ratio: 8/5` de `.campaign-card__image-link`. |
+| **Alternativas** | (1) Mantener `width/height` y forzar altura en CSS: frágil, rompe en diferentes viewports. (2) Usar `<img>` plano: pierde optimización de Next.js (lazy load, WebP, srcset). |
+| **Impacto** | `components/campaign/CampaignCard.jsx` (prop `fill`, fix `alt`), `app/globals.css` (simplificación de `.campaign-card__image`). |
+| **Aprendido** | Con `next/image` y `fill`: el contenedor padre DEBE tener `position: relative` y dimensiones definidas (altura explícita o `aspect-ratio`). Sin eso, la imagen queda colapsada a 0px. El `aspect-ratio: 8/5` en `.campaign-card__image-link` ya lo satisfacía. |
