@@ -2,13 +2,15 @@
 
 import { useCallback, useMemo, useState } from "react";
 import {
+  MIN_CONTRIBUTION_AMOUNT,
+  validateContributionBody,
+} from "@/lib/contribution/validate";
+import {
   deriveInitialsFallback,
   formatMoney,
   getContributionAmountDisplay,
   getContributorDisplayName,
 } from "@/lib/data/campaigns";
-
-const MIN_AMOUNT = 100;
 
 function buildPreviewContribution({
   amount,
@@ -27,13 +29,15 @@ function buildPreviewContribution({
   };
 }
 
-export function ContributionForm({ campaignTitle }) {
+export function ContributionForm({ campaignSlug, campaignTitle }) {
   const [amountInput, setAmountInput] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showPublicName, setShowPublicName] = useState(true);
   const [showAmount, setShowAmount] = useState(true);
   const [errors, setErrors] = useState({});
   const [submitMessage, setSubmitMessage] = useState(null);
+  const [serverError, setServerError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const amount = useMemo(() => {
     const n = Number.parseFloat(String(amountInput).replace(",", "."));
@@ -53,27 +57,26 @@ export function ContributionForm({ campaignTitle }) {
 
   const previewName = getContributorDisplayName(previewContribution);
   const amountDisplay = getContributionAmountDisplay(previewContribution);
-  const previewAmountReady = Number.isFinite(amount) && amount >= MIN_AMOUNT;
+  const previewAmountReady =
+    Number.isFinite(amount) && amount >= MIN_CONTRIBUTION_AMOUNT;
 
   const validate = useCallback(() => {
-    const next = {};
-    if (!Number.isFinite(amount) || amount < MIN_AMOUNT) {
-      next.amount = `Ingresá un monto válido (mínimo ${formatMoney(MIN_AMOUNT)}).`;
-    }
-    if (showPublicName && !displayName.trim()) {
-      next.displayName =
-        "Si querés mostrar tu nombre en la lista, escribilo acá (o desactivá “Mostrar mi nombre públicamente”).";
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  }, [amount, displayName, showPublicName]);
+    const result = validateContributionBody({
+      amount: amountInput,
+      displayName,
+      showPublicName,
+      showAmount,
+    });
+    setErrors(result.valid ? {} : result.errors);
+    return result.valid;
+  }, [amountInput, displayName, showPublicName, showAmount]);
 
   const summaryLines = useMemo(() => {
     const lines = [];
-    if (Number.isFinite(amount) && amount >= MIN_AMOUNT) {
+    if (Number.isFinite(amount) && amount >= MIN_CONTRIBUTION_AMOUNT) {
       lines.push(`Monto del aporte: ${formatMoney(amount)}.`);
     } else {
-      lines.push(`Indicá un monto (mínimo ${formatMoney(MIN_AMOUNT)}).`);
+      lines.push(`Indicá un monto (mínimo ${formatMoney(MIN_CONTRIBUTION_AMOUNT)}).`);
     }
     if (showPublicName) {
       lines.push(
@@ -97,13 +100,66 @@ export function ContributionForm({ campaignTitle }) {
     return lines;
   }, [amount, displayName, showPublicName, showAmount]);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setSubmitMessage(null);
+    setServerError(null);
     if (!validate()) return;
-    setSubmitMessage(
-      "Datos listos. En la siguiente entrega del proyecto esto se conectará al pago (Mercado Pago) y al registro del aporte.",
-    );
+
+    const parsed = validateContributionBody({
+      amount: amountInput,
+      displayName,
+      showPublicName,
+      showAmount,
+    });
+    if (!parsed.valid || !parsed.data) return;
+
+    if (!campaignSlug?.trim()) {
+      setServerError("Falta el identificador de campaña. Recargá la página.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(
+        `/api/campanas/${encodeURIComponent(campaignSlug.trim())}/aporte`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed.data),
+        },
+      );
+
+      let payload = {};
+      try {
+        payload = await res.json();
+      } catch {
+        payload = {};
+      }
+
+      if (!res.ok) {
+        if (payload.errors && typeof payload.errors === "object") {
+          setErrors(payload.errors);
+        } else {
+          setServerError(
+            typeof payload.error === "string"
+              ? payload.error
+              : "No se pudo validar el aporte en el servidor.",
+          );
+        }
+        return;
+      }
+
+      if (typeof payload.message === "string") {
+        setSubmitMessage(payload.message);
+      } else {
+        setSubmitMessage("Aporte validado en el servidor.");
+      }
+    } catch {
+      setServerError("Error de red. Probá de nuevo en unos segundos.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -132,7 +188,7 @@ export function ContributionForm({ campaignTitle }) {
             id="contribution-amount"
             name="amount"
             type="number"
-            min={MIN_AMOUNT}
+            min={MIN_CONTRIBUTION_AMOUNT}
             step="1"
             inputMode="numeric"
             autoComplete="transaction-amount"
@@ -228,8 +284,17 @@ export function ContributionForm({ campaignTitle }) {
           </ul>
         </div>
 
-        <div className="contribution-form__preview-block">
-          <h3 className="contribution-form__subheading">Vista previa en la lista</h3>
+        <section
+          className="contribution-form__preview-block"
+          role="region"
+          aria-labelledby="contribution-preview-heading"
+        >
+          <h3
+            id="contribution-preview-heading"
+            className="contribution-form__subheading"
+          >
+            Vista previa en la lista
+          </h3>
           <p className="contribution-form__hint">Así se vería tu fila junto al resto de los aportes:</p>
           <ul className="contributions__list contribution-form__preview-list">
             <li className="contributions__item contribution-form__preview-item">
@@ -248,12 +313,23 @@ export function ContributionForm({ campaignTitle }) {
               </span>
             </li>
           </ul>
-        </div>
+        </section>
 
-        <button type="submit" className="button button--primary button--lg">
-          Continuar (simulación)
+        <button
+          type="submit"
+          className="button button--primary button--lg"
+          disabled={submitting}
+          aria-busy={submitting ? "true" : "false"}
+        >
+          {submitting ? "Enviando…" : "Continuar hacia el pago"}
         </button>
       </form>
+
+      {serverError ? (
+        <p className="contribution-form__error contribution-form__error--block" role="alert">
+          {serverError}
+        </p>
+      ) : null}
 
       {submitMessage ? (
         <p className="contribution-form__success" role="status" aria-live="polite">

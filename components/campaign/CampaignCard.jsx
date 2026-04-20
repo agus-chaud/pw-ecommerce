@@ -29,6 +29,9 @@ export function CampaignCard({ campaign }) {
           <span className="campaign-card__stats-sep"> · </span>
           <span>meta {formatMoney(campaign.goal)}</span>
         </p>
+        <div className="campaign-card__progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <div className="campaign-card__progress-fill" style={{ width: `${pct}%` }} />
+        </div>
         <Link href={`/campanas/${campaign.slug}`} className="campaign-card__cta">
           Ver campaña
         </Link>

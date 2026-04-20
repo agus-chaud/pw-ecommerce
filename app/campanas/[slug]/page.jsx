@@ -62,7 +62,7 @@ export default function CampanaDetallePage({ params }) {
         </aside>
       </div>
 
-      <ContributionForm campaignTitle={campaign.title} />
+      <ContributionForm campaignSlug={campaign.slug} campaignTitle={campaign.title} />
 
       <ContributionsList contributions={campaign.contributions} />
     </article>

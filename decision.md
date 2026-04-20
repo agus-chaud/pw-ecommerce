@@ -163,32 +163,56 @@ Las decisiones se irán ampliando en fases posteriores (por ejemplo, convencione
 
 ---
 
-## Fase 3 — E3 (formularios dinámicos, primera parte)
+## Fase 3 — E3 (formularios dinámicos + API de validación)
 
-### D14. Formulario de aporte con DOM vivo y reglas de privacidad compartidas
-
-| Campo | Detalle |
-|-------|--------|
-| **Decisión** | Componente cliente `components/campaign/ContributionForm.jsx` en la página `app/campanas/[slug]/page.jsx`, con resumen en vivo (`aria-live`), vista previa de fila pública, validación (monto mínimo $100 ARS, nombre obligatorio si “Mostrar mi nombre públicamente”), y envío simulado con mensaje de estado. |
-| **Por qué** | Cumple el plan E3: el DOM cambia con la interacción (no solo HTML estático). La vista previa reutiliza `getContributorDisplayName` y `getContributionAmountDisplay` para alinearse con `ContributionsList`. |
-| **Alternativas** | Solo HTML5 sin feedback dinámico: no alcanza “Excelente” en E3. Duplicar reglas de privacidad en el componente: riesgo de divergencia con la lista. |
-| **Impacto** | Nueva función `deriveInitialsFallback` en `lib/data/campaigns.js` (iniciales para nombre oculto); estilos en `app/globals.css` bajo `.contribution-form`. |
-| **Aprendido** | El botón indica “simulación” hasta conectar pago/API en fases posteriores; el contrato de UX queda listo. |
-
-### D15. Validación tipo “smart-testing” (comportamiento + CI)
+### D14. Formulario de aporte, validación compartida y POST a API (antes de Mercado Pago)
 
 | Campo | Detalle |
 |-------|--------|
-| **Decisión** | Tests con React Testing Library centrados en **comportamiento observable** (etiquetas, roles, texto en vista previa), no en detalles de implementación interna del componente. Archivo `components/campaign/ContributionForm.test.jsx` cubre: título y campaña, actualización de preview con monto/nombre, cambio a iniciales al desmarcar nombre público, y mensaje de error al enviar con monto inválido. |
-| **Por qué** | La skill referenciada como `smart-testing` en `~/.agents/skills/agents.md` prioriza pruebas por comportamiento real y evita sobre-mocking; en este entorno el archivo `smart-testing/SKILL.md` no estaba presente, así que se aplicó ese criterio explícitamente. |
-| **Alternativas** | Solo tests de funciones en `campaigns.test.js`: no protegen la integración UI. E2E (Playwright): útil más adelante; para E3 la pirámide sugiere unit + smoke de componente en CI. |
-| **Impacto** | Suite Jest: `lib/data/campaigns.test.js`, `app/page.test.jsx`, `components/campaign/ContributionForm.test.jsx` (13 tests en total al documentar). |
-| **Aprendido** | Verificación completa alineada al workflow de Fase 1: `npm run test` → `npm run lint` → `npm run build` (todos OK tras estos cambios). |
+| **Decisión** | `ContributionForm` (cliente) en `app/campanas/[slug]/page.jsx` recibe `campaignSlug` y envía **POST** a `/api/campanas/[slug]/aporte` con JSON `{ amount, displayName, showPublicName, showAmount }`. La validación duplicada se evita con `lib/contribution/validate.js` (`validateContributionBody`, `buildPublicPreviewRow`), usada en el cliente y en `app/api/campanas/[slug]/aporte/route.js`. Resumen en vivo (`aria-live`), vista previa de fila pública, estados de envío y error de red/servidor. |
+| **Por qué** | El plan E3 pide DOM dinámico, validación HTML5 + JS, **fetch** y **validación en servidor** cuando exista backend. Así el contrato del aporte queda cerrado antes de MP/Supabase; la API hoy solo valida y devuelve `publicPreview` derivado (sin persistencia). |
+| **Alternativas** | Solo mensaje local sin `fetch`: no cumple el ítem de fetch del plan. Validar solo en cliente: mismo mensaje para el usuario pero peor defensa en profundidad. |
+| **Impacto** | README sección “Flujo de aporte”; región accesible `role="region"` + `aria-labelledby` en la vista previa para tests y lectores de pantalla. |
+| **Aprendido** | Mantener mensajes de error idénticos en cliente y API reduce sorpresas cuando el front y el back divergen en versiones. |
 
-### Verificación registrada (pipeline local)
+### D15. Smart-testing (skill en repo + pirámide de pruebas)
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Documentar y aplicar la skill **`.cursor/skills/smart-testing/SKILL.md`**: prioridad negocio puro → UI crítica → mock solo en el **borde** (p. ej. `fetch`). En tests de formulario: `@testing-library/user-event` para interacciones realistas; consultas por **rol** y **región** con nombre accesible (`getByRole("region", { name: /Vista previa/ })`), sin acoplar a clases BEM. Tests de `validateContributionBody` en `lib/contribution/validate.test.js` describen reglas de negocio y copy visible. |
+| **Por qué** | El registro global (`~/.agents/skills/agents.md`) apunta a `smart-testing` en rutas que en esta máquina no existían; versionar la skill en el proyecto asegura que Cursor y el equipo lean el mismo criterio. |
+| **Alternativas** | Solo `fireEvent` y selectores por clase: más frágil y menos fiel al uso real. Mockear internals de React además de `fetch`: sobre-mocking (evitar). |
+| **Impacto** | Suite Jest: `lib/data/campaigns.test.js`, `lib/contribution/validate.test.js`, `app/page.test.jsx`, `components/campaign/ContributionForm.test.jsx`. |
+| **Aprendido** | Un `section` con nombre accesible sirve doble filo: mejor semántica y anclaje estable para RTL sin `data-testid`. |
+
+### Verificación registrada (pipeline local, 2026-03-30)
 
 | Comando | Resultado |
 |---------|-----------|
-| `npm run test` | OK (13 tests) |
+| `npm run test` | OK (20 tests) |
 | `npm run lint` | Sin advertencias ni errores |
-| `npm run build` | Compilación y páginas estáticas OK |
+| `npm run build` | OK; ruta dinámica `ƒ /api/campanas/[slug]/aporte` incluida |
+
+---
+
+## Fase 4 — E4 (Landing visual upgrade)
+
+### D16. Mejora visual de landing: stats decorativos en hero + CTA dual
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Reemplazar el hero__visual vacío (solo blob) por tres stat-cards decorativas hardcodeadas ("3 proyectos", "$45.000 ARS", "12 vecinos"). Reemplazar el `cta-band` de un solo botón por una sección `cta-split` con dos caminos: donante (→ `/campanas`) y creador ("Próximamente", disabled). Agregar barra de progreso mínima en `CampaignCard` usando el `pct` ya calculado pero no mostrado. |
+| **Por qué** | La landing se veía como trabajo práctico; los datos mock permiten simular stats de impacto sin backend. El CTA dual diferencia los dos tipos de usuario del crowdfunding y da profundidad visual. |
+| **Alternativas** | (1) Solo mejorar estilos sin secciones nuevas: menos impacto visual. (2) Agregar sección "Cómo funciona": decidido no incluir por ahora para no agregar scope. (3) Tailwind CSS: descartado; el proyecto ya tiene un sistema CSS con variables bien establecido. |
+| **Impacto** | `app/page.jsx` (hero stats + cta-split), `app/globals.css` (keyframes float, hover enriquecido, estilos cta-split y campaign-card__progress), `components/campaign/CampaignCard.jsx` (mini progress bar con aria-valuenow). |
+| **Aprendido** | Los stats del hero son decorativos/mock — cuando exista Supabase hay que calcularlos dinámicamente. El `cta-band` se mantiene en CSS para no romper otras páginas; `cta-split` es clase nueva. La animación float respeta `prefers-reduced-motion`. |
+
+### D17. Flujo de trabajo con SDD (Spec-Driven Development) via grill-me + plan
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Adoptar el flujo **SDD** con la skill `grill-me` antes de implementar cambios de producto. El proceso es: (1) explorar el codebase automáticamente, (2) hacer 4 preguntas una a la vez para refinar decisiones (stack, estética, alcance, CTA, CSS), (3) generar un plan en `~/.claude/plans/`, (4) esperar aprobación explícita antes de tocar código. |
+| **Por qué** | Evita implementar suposiciones. El grill-me forzó a aclarar que el proyecto ya estaba en Next.js 14 (no era una migración real), que no se quería TypeScript, y que el CTA debía tener dos caminos. Sin ese proceso, el plan hubiera partido de premisas incorrectas. |
+| **Alternativas** | Implementar directo sin planning: más rápido pero con mayor riesgo de rehacer trabajo por malentendidos. SDD completo (explore → propose → spec → design → tasks): más peso para cambios de landing; grill-me es el punto medio apropiado. |
+| **Impacto** | Cada cambio significativo de producto parte de 4 preguntas contextuales + un plan aprobado. El plan se guarda localmente y se persiste en engram para recuperación entre sesiones. |
+| **Aprendido** | El primer grill-me reveló que el usuario pedía "migrar a Next.js" pero ya estaba en Next.js — la exploración automática del codebase antes de la primera pregunta es crítica para no hacer preguntas irrelevantes. |
