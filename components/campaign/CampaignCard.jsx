@@ -16,9 +16,8 @@ export function CampaignCard({ campaign, priority = false }) {
       <Link href={`/campanas/${campaign.slug}`} className="campaign-card__image-link">
         <Image
           src={campaign.imageSrc}
-          alt=""
-          width={800}
-          height={500}
+          alt={campaign.imageAlt}
+          fill
           className="campaign-card__image"
           sizes="(max-width: 768px) 100vw, 33vw"
           priority={priority}
@@ -36,6 +35,9 @@ export function CampaignCard({ campaign, priority = false }) {
           <span className="campaign-card__stats-sep"> · </span>
           <span>meta {formatMoney(campaign.goal)}</span>
         </p>
+        <div className="campaign-card__progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+          <div className="campaign-card__progress-fill" style={{ width: `${pct}%` }} />
+        </div>
         <Link href={`/campanas/${campaign.slug}`} className="campaign-card__cta">
           Ver campaña
         </Link>

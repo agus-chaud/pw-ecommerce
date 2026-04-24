@@ -231,3 +231,35 @@ Las decisiones se irán ampliando en fases posteriores (por ejemplo, convencione
 | **Alternativas** | (1) Mantener `priority` en todas las destacadas: más agresivo y peor concurrencia de carga. (2) Migrar todos los SVG a WebP/PNG: válido, pero implica regenerar assets y no era necesario para resolver el bug inmediato. |
 | **Impacto** | Menos presión en el render inicial de `/`; mejora esperada de tiempo de carga percibido en home. Rutas tocadas: `app/page.jsx`, `components/campaign/CampaignCard.jsx`, `app/campanas/[slug]/page.jsx`, `public/campaigns/*.svg`, `next.config.mjs` (`images.minimumCacheTTL`). |
 | **Aprendido** | `priority` debe reservarse para elementos candidatos reales a LCP; no para todas las imágenes destacadas. Para SVG en `public/`, `next/image` con `unoptimized` es una solución pragmática cuando hay sensibilidad a parseo/optimización. |
+
+## Fase 4 — E4 (Landing visual upgrade)
+
+### D16. Mejora visual de landing: stats decorativos en hero + CTA dual
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Reemplazar el hero__visual vacío (solo blob) por tres stat-cards decorativas hardcodeadas ("3 proyectos", "$45.000 ARS", "12 vecinos"). Reemplazar el `cta-band` de un solo botón por una sección `cta-split` con dos caminos: donante (→ `/campanas`) y creador ("Próximamente", disabled). Agregar barra de progreso mínima en `CampaignCard` usando el `pct` ya calculado pero no mostrado. |
+| **Por qué** | La landing se veía como trabajo práctico; los datos mock permiten simular stats de impacto sin backend. El CTA dual diferencia los dos tipos de usuario del crowdfunding y da profundidad visual. |
+| **Alternativas** | (1) Solo mejorar estilos sin secciones nuevas: menos impacto visual. (2) Agregar sección "Cómo funciona": decidido no incluir por ahora para no agregar scope. (3) Tailwind CSS: descartado; el proyecto ya tiene un sistema CSS con variables bien establecido. |
+| **Impacto** | `app/page.jsx` (hero stats + cta-split), `app/globals.css` (keyframes float, hover enriquecido, estilos cta-split y campaign-card__progress), `components/campaign/CampaignCard.jsx` (mini progress bar con aria-valuenow). |
+| **Aprendido** | Los stats del hero son decorativos/mock — cuando exista Supabase hay que calcularlos dinámicamente. El `cta-band` se mantiene en CSS para no romper otras páginas; `cta-split` es clase nueva. La animación float respeta `prefers-reduced-motion`. |
+
+### D17. Flujo de trabajo con SDD (Spec-Driven Development) via grill-me + plan
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Adoptar el flujo **SDD** con la skill `grill-me` antes de implementar cambios de producto. El proceso es: (1) explorar el codebase automáticamente, (2) hacer 4 preguntas una a la vez para refinar decisiones (stack, estética, alcance, CTA, CSS), (3) generar un plan en `~/.claude/plans/`, (4) esperar aprobación explícita antes de tocar código. |
+| **Por qué** | Evita implementar suposiciones. El grill-me forzó a aclarar que el proyecto ya estaba en Next.js 14 (no era una migración real), que no se quería TypeScript, y que el CTA debía tener dos caminos. Sin ese proceso, el plan hubiera partido de premisas incorrectas. |
+| **Alternativas** | Implementar directo sin planning: más rápido pero con mayor riesgo de rehacer trabajo por malentendidos. SDD completo (explore → propose → spec → design → tasks): más peso para cambios de landing; grill-me es el punto medio apropiado. |
+| **Impacto** | Cada cambio significativo de producto parte de 4 preguntas contextuales + un plan aprobado. El plan se guarda localmente y se persiste en engram para recuperación entre sesiones. |
+| **Aprendido** | El primer grill-me reveló que el usuario pedía "migrar a Next.js" pero ya estaba en Next.js — la exploración automática del codebase antes de la primera pregunta es crítica para no hacer preguntas irrelevantes. |
+
+### D18. Fix renderizado de imágenes en CampaignCard: prop `fill` en next/image
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Reemplazar `width={800} height={500}` por el prop `fill` en el componente `<Image>` dentro de `CampaignCard`. Actualizar CSS de `.campaign-card__image` para eliminar `width: 100%; height: auto;` y dejar solo `object-fit: cover; object-position: center`. Corregir `alt=""` por `alt={campaign.imageAlt}`. |
+| **Por qué** | Con dimensiones explícitas, `next/image` renderiza la imagen a su ratio intrínseco y el CSS `object-fit: cover` no tiene efecto (no hay altura restringida por el contenedor). El prop `fill` genera `position: absolute; inset: 0` y hace que la imagen llene el contenedor `position: relative; aspect-ratio: 8/5` de `.campaign-card__image-link`. |
+| **Alternativas** | (1) Mantener `width/height` y forzar altura en CSS: frágil, rompe en diferentes viewports. (2) Usar `<img>` plano: pierde optimización de Next.js (lazy load, WebP, srcset). |
+| **Impacto** | `components/campaign/CampaignCard.jsx` (prop `fill`, fix `alt`), `app/globals.css` (simplificación de `.campaign-card__image`). |
+| **Aprendido** | Con `next/image` y `fill`: el contenedor padre DEBE tener `position: relative` y dimensiones definidas (altura explícita o `aspect-ratio`). Sin eso, la imagen queda colapsada a 0px. El `aspect-ratio: 8/5` en `.campaign-card__image-link` ya lo satisfacía. |

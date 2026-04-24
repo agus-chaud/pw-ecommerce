@@ -26,6 +26,19 @@ En el detalle de campaña, el formulario envía **POST** a `/api/campanas/[slug]
 
 Los listados públicos deben usar solo datos derivados (`getContributorDisplayName`, `getContributionAmountDisplay`), no campos internos innecesarios.
 
+## Flujo de aporte (antes del pago, E3)
+
+En el detalle de campaña, el formulario envía **POST** a `/api/campanas/[slug]/aporte` con JSON:
+
+| Campo | Tipo | Notas |
+| ----- | ---- | ----- |
+| `amount` | número | Mínimo $100 ARS (validación compartida cliente/servidor). |
+| `displayName` | string | Máx. 120 caracteres; sirve para nombre público o para derivar iniciales. |
+| `showPublicName` | boolean | Si es `false`, en la lista pública se muestran **iniciales** (regla en `lib/data/campaigns.js`: primera letra del primer término + del último; un solo término → una inicial) o **“Anónimo”** si no hay texto. |
+| `showAmount` | boolean | Si es `false`, en la lista pública el monto se muestra como “Monto oculto”; el valor real se usará en servidor para totales cuando exista persistencia. |
+
+Los listados públicos deben usar solo datos derivados (`getContributorDisplayName`, `getContributionAmountDisplay`), no campos internos innecesarios.
+
 ## Cómo clonar e instalar
 
 ```bash
@@ -48,4 +61,14 @@ Con el repo conectado a [Vercel](https://vercel.com), cada pull request genera u
 
 ## Fases del proyecto
 
-El desarrollo sigue el plan en [.cursor/plans/plan_pw_e-commerce_2026_c681da85.plan.md](.cursor/plans/plan_pw_e-commerce_2026_c681da85.plan.md). Las decisiones técnicas se documentan en [decision.md](decision.md). Los prompts al asistente (y cuáles fueron clave) están en [prompts.md](prompts.md).
+El desarrollo sigue el plan en [.cursor/plans/plan_pw_e-commerce_2026_c681da85.plan.md](.cursor/plans/plan_pw_e-commerce_2026_c681da85.plan.md). Las decisiones técnicas se documentan en [decision.md](decision.md).
+
+## Flujo de desarrollo (SDD)
+
+Este proyecto usa **Spec-Driven Development** para cambios de producto significativos:
+
+1. **grill-me** — 4 preguntas contextuales para refinar decisiones antes de implementar. La skill explora el codebase automáticamente antes de preguntar, evitando suposiciones incorrectas.
+2. **plan** — Se genera un plan aprobado explícitamente por el usuario antes de tocar código. Los planes viven en `~/.claude/plans/` y se persisten en memoria entre sesiones.
+3. **implement** — Implementación contra el plan aprobado, con `decision.md` actualizado al cierre.
+
+**¿Por qué este flujo?** En la sesión de E4, el usuario pidió "migrar a Next.js" — la exploración automática reveló que ya estaba en Next.js 14, evitando trabajo innecesario. Las 4 preguntas de grill-me terminaron de aclarar: sin TypeScript, mejora visual sobre lo existente, CTA dual (donante + creador), CSS plano.

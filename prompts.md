@@ -1,20 +1,5 @@
 # Registro de prompts — PW Crowdfunding (Impulsa.barrio)
 
-Bitácora de lo pedido al asistente (Cursor / IA) y **prompts reconstruidos** cuando no hay texto literal guardado. Sirve para reutilizar plantillas y para la defensa del proyecto.
-
----
-
-## Leyenda de importancia
-
-| Etiqueta | Cuándo usarla |
-|----------|----------------|
-| **`[IMPORTANTE]`** | Cambia arquitectura, docs canónicos (`README`, `decision.md`, plan), entregables de rúbrica, o es una **plantilla** que vas a repetir. |
-| **`[RUTINA]`** | Consulta puntual, explicación one-off, o tarea que ya quedó totalmente reflejada en código sin valor como prompt reutilizable. |
-
-Los prompts marcados como **inferidos** no son citas textuales: se dedujeron del código y de [decision.md](decision.md).
-
----
-
 ## Mapa agent-teams-lite (`docs/agent-orchestration/`)
 
 Orden del pipeline (delegate-only, contexto mínimo): ver [docs/agent-orchestration/fase-2/00-orchestrator-flow.md](docs/agent-orchestration/fase-2/00-orchestrator-flow.md).
@@ -42,16 +27,6 @@ Orden del pipeline (delegate-only, contexto mínimo): ver [docs/agent-orchestrat
 ---
 
 ## Conversación registrada (abril 2026)
-
-### `[RUTINA]` — Fase actual según el plan
-
-**Prompt (texto aproximado):**
-
-> ¿Por qué fase del plan `plan_pw_e-commerce_2026_c681da85.plan.md` voy construyendo?
-
-**Resultado:** Respuesta alineada al repo real (E3–E4 en curso; E5–E6 pendientes), corrigiendo el bloque desactualizado del plan.
-
----
 
 ### `[IMPORTANTE]` — Sincronizar documentación de estado
 
