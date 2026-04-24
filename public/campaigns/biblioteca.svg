@@ -11,5 +11,5 @@
   <rect x="310" y="140" width="70" height="220" fill="#1c1917" opacity="0.85"/>
   <rect x="400" y="170" width="70" height="190" fill="#57534e" opacity="0.6"/>
   <rect x="490" y="150" width="70" height="210" fill="#c45c3e" opacity="0.55"/>
-  <text x="400" y="430" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#57534e">Biblioteca  mock visual</text>
+  <text x="400" y="430" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#57534e">Biblioteca - mock visual</text>
 </svg>

@@ -42,3 +42,5 @@ brainstorming.md
 docs/agent-orchestration/
 **/*.plan.md
 .cursor/plans/
+.agents/skills/**
+.cursor/skills/**

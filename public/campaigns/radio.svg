@@ -11,5 +11,5 @@
   <circle cx="400" cy="220" r="40" fill="none" stroke="#c45c3e" stroke-width="2" opacity="0.8"/>
   <rect x="330" y="300" width="140" height="90" rx="10" fill="#1c1917"/>
   <circle cx="400" cy="335" r="28" fill="#fffcf7"/>
-  <text x="400" y="455" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#1c1917">Radio  mock visual</text>
+  <text x="400" y="455" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#1c1917">Radio - mock visual</text>
 </svg>

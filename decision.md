@@ -1,6 +1,19 @@
-# Decisiones técnicas — Fase 1 (E1: Repo + CI/CD + preview)
+# Decisiones técnicas — PW Crowdfunding (plan agent-teams-lite)
 
-Registro de decisiones tomadas en la Fase 1 del plan agent-teams-lite: justificación, alternativas consideradas, impacto y aprendizaje.
+Registro de decisiones por fase (E1 en adelante): justificación, alternativas consideradas, impacto y aprendizaje.
+
+## Estado actual del proyecto (abril 2026)
+
+| Fase | Entregable (plan) | Estado en el repo |
+|------|-------------------|-------------------|
+| E1 | Repo + CI/CD + preview | Hecho: Next.js en raíz, workflow `.github/workflows/ci.yml`, README y documentación de Vercel. |
+| E2 | Landing + vistas responsivas | Hecho: rutas `/`, `/campanas`, `/campanas/[slug]`, layout accesible, tema editorial, mock en `lib/data/campaigns.js`. |
+| E3 | Formularios dinámicos + fetch + validación servidor | **Cerrado (trámite):** mismo alcance que antes; verificación y archivo en [docs/agent-orchestration/fase-3-e3/](docs/agent-orchestration/fase-3-e3/); D14–D15 y D16. |
+| E4 | Catálogo + API pública coherente | En curso: catálogo y API de aporte a nivel validación/contrato; persistencia y listados 100 % vía API aún no. |
+| E5 | Supabase + admin | Pendiente. |
+| E6 | Pago + webhook + demo | Pendiente. |
+
+El bloque **“Estado actual”** del plan en `.cursor/plans/plan_pw_e-commerce_2026_c681da85.plan.md` se mantiene alineado con esta tabla.
 
 ---
 
@@ -80,10 +93,10 @@ Registro de decisiones tomadas en la Fase 1 del plan agent-teams-lite: justifica
 
 | Campo | Detalle |
 |-------|--------|
-| **Decisión** | La entrada de la aplicación pasa a ser la raíz servida por Next.js (`app/page.jsx`); el `index.html` previo ("Hola Mundo") deja de ser la página principal y puede eliminarse o conservarse como referencia. |
+| **Decisión** | La entrada de la aplicación pasa a ser la raíz servida por Next.js (`app/page.jsx`); el `index.html` previo ("Hola Mundo") deja de ser la página principal y se **eliminó del repo** para evitar ambigüedad. |
 | **Por qué** | Con Next.js en la raíz, la ruta `/` la sirve el App Router; un `index.html` en la raíz no es usado por `next dev` ni por el build. Mantenerlo genera confusión sobre qué es la "home". |
 | **Alternativas** | (1) Conservar `index.html` en raíz: Next ignora ese archivo en dev/build; podría usarse para redirección estática pero no es necesario. (2) Mover a `public/`: se serviría en `/index.html`, no en `/`. |
-| **Impacto** | La única página de entrada es la generada por `app/page.jsx`; el contenido "Hola Mundo" se sustituye por el contenido de la Fase 1 (título PW E-commerce y mensaje de Fase 1). |
+| **Impacto** | La única página de entrada es la generada por `app/page.jsx`; el `index.html` inicial dejó de usarse y **fue eliminado del repositorio** una vez estabilizada la app Next.js. |
 | **Aprendido** | En un proyecto Next.js, la raíz de contenido es `app/`; los estáticos van en `public/`. Eliminar o archivar el HTML inicial evita dudas en las siguientes fases. |
 
 ---
@@ -163,32 +176,58 @@ Las decisiones se irán ampliando en fases posteriores (por ejemplo, convencione
 
 ---
 
-## Fase 3 — E3 (formularios dinámicos, primera parte)
+## Fase 3 — E3 (formularios dinámicos + API de validación)
 
-### D14. Formulario de aporte con DOM vivo y reglas de privacidad compartidas
-
-| Campo | Detalle |
-|-------|--------|
-| **Decisión** | Componente cliente `components/campaign/ContributionForm.jsx` en la página `app/campanas/[slug]/page.jsx`, con resumen en vivo (`aria-live`), vista previa de fila pública, validación (monto mínimo $100 ARS, nombre obligatorio si “Mostrar mi nombre públicamente”), y envío simulado con mensaje de estado. |
-| **Por qué** | Cumple el plan E3: el DOM cambia con la interacción (no solo HTML estático). La vista previa reutiliza `getContributorDisplayName` y `getContributionAmountDisplay` para alinearse con `ContributionsList`. |
-| **Alternativas** | Solo HTML5 sin feedback dinámico: no alcanza “Excelente” en E3. Duplicar reglas de privacidad en el componente: riesgo de divergencia con la lista. |
-| **Impacto** | Nueva función `deriveInitialsFallback` en `lib/data/campaigns.js` (iniciales para nombre oculto); estilos en `app/globals.css` bajo `.contribution-form`. |
-| **Aprendido** | El botón indica “simulación” hasta conectar pago/API en fases posteriores; el contrato de UX queda listo. |
-
-### D15. Validación tipo “smart-testing” (comportamiento + CI)
+### D14. Formulario de aporte, validación compartida y POST a API (antes de Mercado Pago)
 
 | Campo | Detalle |
 |-------|--------|
-| **Decisión** | Tests con React Testing Library centrados en **comportamiento observable** (etiquetas, roles, texto en vista previa), no en detalles de implementación interna del componente. Archivo `components/campaign/ContributionForm.test.jsx` cubre: título y campaña, actualización de preview con monto/nombre, cambio a iniciales al desmarcar nombre público, y mensaje de error al enviar con monto inválido. |
-| **Por qué** | La skill referenciada como `smart-testing` en `~/.agents/skills/agents.md` prioriza pruebas por comportamiento real y evita sobre-mocking; en este entorno el archivo `smart-testing/SKILL.md` no estaba presente, así que se aplicó ese criterio explícitamente. |
-| **Alternativas** | Solo tests de funciones en `campaigns.test.js`: no protegen la integración UI. E2E (Playwright): útil más adelante; para E3 la pirámide sugiere unit + smoke de componente en CI. |
-| **Impacto** | Suite Jest: `lib/data/campaigns.test.js`, `app/page.test.jsx`, `components/campaign/ContributionForm.test.jsx` (13 tests en total al documentar). |
-| **Aprendido** | Verificación completa alineada al workflow de Fase 1: `npm run test` → `npm run lint` → `npm run build` (todos OK tras estos cambios). |
+| **Decisión** | `ContributionForm` (cliente) en `app/campanas/[slug]/page.jsx` recibe `campaignSlug` y envía **POST** a `/api/campanas/[slug]/aporte` con JSON `{ amount, displayName, showPublicName, showAmount }`. La validación duplicada se evita con `lib/contribution/validate.js` (`validateContributionBody`, `buildPublicPreviewRow`), usada en el cliente y en `app/api/campanas/[slug]/aporte/route.js`. Resumen en vivo (`aria-live`), vista previa de fila pública, estados de envío y error de red/servidor. |
+| **Por qué** | El plan E3 pide DOM dinámico, validación HTML5 + JS, **fetch** y **validación en servidor** cuando exista backend. Así el contrato del aporte queda cerrado antes de MP/Supabase; la API hoy solo valida y devuelve `publicPreview` derivado (sin persistencia). |
+| **Alternativas** | Solo mensaje local sin `fetch`: no cumple el ítem de fetch del plan. Validar solo en cliente: mismo mensaje para el usuario pero peor defensa en profundidad. |
+| **Impacto** | README sección “Flujo de aporte”; región accesible `role="region"` + `aria-labelledby` en la vista previa para tests y lectores de pantalla. |
+| **Aprendido** | Mantener mensajes de error idénticos en cliente y API reduce sorpresas cuando el front y el back divergen en versiones. |
 
-### Verificación registrada (pipeline local)
+### D15. Smart-testing (skill en repo + pirámide de pruebas)
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Documentar y aplicar la skill **`.cursor/skills/smart-testing/SKILL.md`**: prioridad negocio puro → UI crítica → mock solo en el **borde** (p. ej. `fetch`). En tests de formulario: `@testing-library/user-event` para interacciones realistas; consultas por **rol** y **región** con nombre accesible (`getByRole("region", { name: /Vista previa/ })`), sin acoplar a clases BEM. Tests de `validateContributionBody` en `lib/contribution/validate.test.js` describen reglas de negocio y copy visible. |
+| **Por qué** | El registro global (`~/.agents/skills/agents.md`) apunta a `smart-testing` en rutas que en esta máquina no existían; versionar la skill en el proyecto asegura que Cursor y el equipo lean el mismo criterio. |
+| **Alternativas** | Solo `fireEvent` y selectores por clase: más frágil y menos fiel al uso real. Mockear internals de React además de `fetch`: sobre-mocking (evitar). |
+| **Impacto** | Suite Jest: `lib/data/campaigns.test.js`, `lib/contribution/validate.test.js`, `app/page.test.jsx`, `components/campaign/ContributionForm.test.jsx`. |
+| **Aprendido** | Un `section` con nombre accesible sirve doble filo: mejor semántica y anclaje estable para RTL sin `data-testid`. |
+
+### Verificación registrada (pipeline local, 2026-03-30)
 
 | Comando | Resultado |
 |---------|-----------|
-| `npm run test` | OK (13 tests) |
+| `npm run test` | OK (20 tests) |
 | `npm run lint` | Sin advertencias ni errores |
-| `npm run build` | Compilación y páginas estáticas OK |
+| `npm run build` | OK; ruta dinámica `ƒ /api/campanas/[slug]/aporte` incluida |
+
+---
+
+### D16. Cierre de trámite E3 (agent-teams-lite)
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | Registrar **verificación** y **archivo** del entregable E3 en el repo: `docs/agent-orchestration/fase-3-e3/06-verification.md` y `07-archive.md`. |
+| **Por qué** | D12 exige trazabilidad del ciclo (incl. verificación y cierre); antes no existía carpeta `docs/agent-orchestration/` en el árbol. Cierra el “trámite” sin cambiar el alcance técnico de E3. |
+| **Alternativas** | Solo memoria oral o Engram: peor para defensa académica y para quien clone el repo. |
+| **Impacto** | Estado E3 explícito en la tabla superior; criterios V1–V7 y comandos documentados en `06-verification.md`. |
+| **Aprendido** | Si `npm run build` falla con `EISDIR` bajo `node_modules/next`, conviene `rm -rf node_modules` + `npm ci` (o equivalente en Windows) antes de repetir la verificación. |
+
+---
+
+## Ajustes de imágenes y rendimiento (abril 2026)
+
+### D17. LCP en home: `priority` solo para una card + SVG sin optimización
+
+| Campo | Detalle |
+|-------|--------|
+| **Decisión** | En home (`app/page.jsx`) pasar `priority` solo a la **primera** `CampaignCard` (`index === 0`), dejando el resto en lazy-load. En `CampaignCard.jsx` se agrega prop `priority` (default `false`) y `unoptimized` condicional para `.svg` de `public/`. En detalle (`app/campanas/[slug]/page.jsx`) se mantiene `priority` de la imagen principal. |
+| **Por qué** | Tener múltiples imágenes con `priority` en el primer viewport aumenta competencia por red y empeora el LCP percibido. Además, para SVG locales conviene servir el asset estático sin pipeline de optimización para evitar fallos por XML estricto y simplificar carga. |
+| **Alternativas** | (1) Mantener `priority` en todas las destacadas: más agresivo y peor concurrencia de carga. (2) Migrar todos los SVG a WebP/PNG: válido, pero implica regenerar assets y no era necesario para resolver el bug inmediato. |
+| **Impacto** | Menos presión en el render inicial de `/`; mejora esperada de tiempo de carga percibido en home. Rutas tocadas: `app/page.jsx`, `components/campaign/CampaignCard.jsx`, `app/campanas/[slug]/page.jsx`, `public/campaigns/*.svg`, `next.config.mjs` (`images.minimumCacheTTL`). |
+| **Aprendido** | `priority` debe reservarse para elementos candidatos reales a LCP; no para todas las imágenes destacadas. Para SVG en `public/`, `next/image` con `unoptimized` es una solución pragmática cuando hay sensibilidad a parseo/optimización. |

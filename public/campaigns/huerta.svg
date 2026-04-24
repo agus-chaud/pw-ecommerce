@@ -5,5 +5,5 @@
   <ellipse cx="420" cy="240" rx="100" ry="130" fill="#2e7d32" opacity="0.9"/>
   <ellipse cx="540" cy="270" rx="85" ry="115" fill="#66bb6a" opacity="0.8"/>
   <rect x="360" y="320" width="80" height="90" rx="6" fill="#795548"/>
-  <text x="400" y="470" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#33691e">Huerta  mock visual</text>
+  <text x="400" y="470" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#33691e">Huerta - mock visual</text>
 </svg>

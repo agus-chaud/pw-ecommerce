@@ -47,6 +47,7 @@ export default function CampanaDetallePage({ params }) {
           className="campaign-detail__image"
           sizes="(max-width: 960px) 100vw, 960px"
           priority
+          unoptimized={typeof campaign.imageSrc === "string" && campaign.imageSrc.toLowerCase().endsWith(".svg")}
         />
       </div>
 
@@ -62,7 +63,7 @@ export default function CampanaDetallePage({ params }) {
         </aside>
       </div>
 
-      <ContributionForm campaignTitle={campaign.title} />
+      <ContributionForm campaignSlug={campaign.slug} campaignTitle={campaign.title} />
 
       <ContributionsList contributions={campaign.contributions} />
     </article>

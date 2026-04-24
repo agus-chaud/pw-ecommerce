@@ -696,6 +696,10 @@ main:focus-visible {
   padding-left: 0.5rem;
 }
 
+.contribution-form__error--block {
+  margin-top: 1rem;
+}
+
 .contribution-form__fieldset {
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-sm);

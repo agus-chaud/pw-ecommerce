@@ -43,8 +43,8 @@ export default function Home() {
             Tres campañas destacadas (mock) para la demo: elegí una y entrá al detalle para ver progreso y aportes públicos.
           </p>
           <div className="campaign-grid">
-            {featured.map((c) => (
-              <CampaignCard key={c.slug} campaign={c} />
+            {featured.map((c, index) => (
+              <CampaignCard key={c.slug} campaign={c} priority={index === 0} />
             ))}
           </div>
         </div>

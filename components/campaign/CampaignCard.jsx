@@ -2,8 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatMoney } from "@/lib/data/campaigns";
 
-export function CampaignCard({ campaign }) {
+/** SVG en public/ no pasa por sharp; servir directo evita fallos del optimizador con XML estricto. */
+function isSvgPath(src) {
+  return typeof src === "string" && src.toLowerCase().endsWith(".svg");
+}
+
+export function CampaignCard({ campaign, priority = false }) {
   const pct = Math.min(100, Math.round((campaign.raised / campaign.goal) * 100));
+  const unoptimized = isSvgPath(campaign.imageSrc);
 
   return (
     <article className="campaign-card">
@@ -15,7 +21,8 @@ export function CampaignCard({ campaign }) {
           height={500}
           className="campaign-card__image"
           sizes="(max-width: 768px) 100vw, 33vw"
-          priority={campaign.featured}
+          priority={priority}
+          unoptimized={unoptimized}
         />
         <span className="sr-only">Ir a {campaign.title}</span>
       </Link>
